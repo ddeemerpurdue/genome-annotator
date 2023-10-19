@@ -1,0 +1,5 @@
+genotator/dbs/*
+Sandbox/*
+dbs/*
+Logs/*
+.snakemake/*
