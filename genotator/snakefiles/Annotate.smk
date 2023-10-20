@@ -1,34 +1,30 @@
 import os
 from datetime import datetime
 tstamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-configfile: "config.yaml"
+configfile: "../config.yaml"
+
+include: "Filter.smk"
+# module filter_workflow:
+#     snakefile: "Filter.smk"
+
+# use rule * from filter_workflow as other_*
+# use rule Place_Final_Genomes from filter_workflow as other_Place_Final_Genomes with:
+#     output: directory(f'{config["verified_contigs"]}')
+
 
 samples, = glob_wildcards(
-    f'{config["contigs"]}/{{samples}}.{config["extension"]}')
+    f'{config["filtered_contigs"]}/{{samples}}.{config["extension"]}')
 
-print(samples)
+print(f'Samples...')
 
 rule all:
     input:
+        f'{config["filtered_contigs"]}',
         expand(f'{config["gff_final"]}/{{sample}}.gff3', sample=samples)
-        #expand("Annotations/Other/{dbs}.estimate_scgs", dbs=glob_wildcards(f'{config["contig_db"]}/{{value}}.db').value),
-
-# INTERNAL PHASE
-rule Reformat_Fasta:
-    input:
-        origin = f'{config["contigs"]}/{{sample}}.{config["extension"]}'
-    output:
-        final = f'{config["verified_contigs"]}/{{sample}}-VERIFIED.{config["extension"]}'
-    log: f'Logs/Reformat_Fasta__{{sample}}.{config["log_id"]}.log'
-    group: "main"
-    shell:
-        """
-        anvi-script-reformat-fasta {input.origin} -o {output.final} --simplify-names --seq-type NT &> {log}
-        """
 
 rule Create_Database:
     input:
-        gen = f'{config["verified_contigs"]}/{{sample}}-VERIFIED.{config["extension"]}'
+        gen = f'{config["filtered_contigs"]}/{{sample}}.{config["extension"]}'
     output:
         out = f'{config["contig_db"]}/{{sample}}.db'
     params:
@@ -182,7 +178,7 @@ rule RAST_Import:
 
 # rule CAZyme_Run:
 #     input:
-#         fasta = f'{config["verified_contigs"]}/{{sample}}-VERIFIED.{config["extension"]}'
+#         fasta = f'{config["filtered_contigs"]}/{{sample}}-VERIFIED.{config["extension"]}'
 #     params:
 #         outdir = f'{config["annotations"]}/DBCan4/{{sample}}/',
 #         outpref = f'{{sample}}_',
