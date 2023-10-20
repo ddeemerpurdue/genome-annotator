@@ -1,5 +1,10 @@
+*logs*
+*dev_tests*
+*.snakemake*
+Genotator.egg-info/*
 genotator/dbs/*
 Sandbox/*
 dbs/*
 Logs/*
 .snakemake/*
+genotator/tests/*

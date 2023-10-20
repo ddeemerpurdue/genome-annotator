@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "Genome Annotator"
+name = "Genotator"
 version = "0.0.1"
 authors = [
   { name="Dane Deemer", email="ddeemer@purdue.edu" },
