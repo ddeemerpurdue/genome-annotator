@@ -1,14 +1,17 @@
 import os
 from datetime import datetime
 tstamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-configfile: "../config.yaml"
+print(f'In Download.smk, wd == {os.getcwd()}')
+configfile: "../genotator/config.yaml"
 
 rule dl_all:
     input:
-        f'{config["verified_contigs"]}/complete.tkn'
+        f'{config["verified_contigs"]}/complete.tkn',
+        f'{config["checkm"]}/complete.tkn'
+        # f'{config["verified_contigs"]}/{{sample}}.{config["extension"]}'
 
 # INTERNAL PHASE
-rule Download_Taxa:
+rule Download_Taxonomy:
     params:
         taxon_id = f'{config["taxon_id"]}',
         source = f'{config["download_source"]}',
@@ -31,32 +34,56 @@ checkpoint Process_NCBI_Zip:
         f'{config["log_folder"]}/Process_NCBI__{config["taxon_id"]}.{config["log_id"]}.log'
     shell:
         """
-        python ../scripts/parse_ncbi_data.py -i {input.z_file} -d {output} &> {log}
+        python ../genotator/scripts/parse_ncbi_data.py -i {input.z_file} -d {output} &> {log}
         """
 
 
-rule Clean_Fastas:
+def grab_ncbi_fastas(wildcards):
+    checkpoint_output = checkpoints.Process_NCBI_Zip.get(**wildcards).output[0]
+    verified_fastas = expand(
+        f'{config["verified_contigs"]}/{{sample}}.{config["extension"]}',
+        sample = glob_wildcards(os.path.join(checkpoint_output, "{sample}.fna")).sample)
+    return verified_fastas
+
+
+def grab_checkm_fastas(wildcards):
+    checkpoint_output = checkpoints.Process_NCBI_Zip.get(**wildcards).output[0]
+    checkm_fasta = expand(
+        f'{config["checkm"]}/{{sample}}/lineage.ms',
+        sample = glob_wildcards(os.path.join(checkpoint_output, "{sample}.fna")).sample)
+    return checkm_fasta
+
+
+rule Verify_Fastas:
     input:
         fasta = f'{config["fastas"]}/{{sample}}.fna'
     output:
-        clean_fasta = f'{config["verified_contigs"]}/{{sample}}.fasta'
+        clean_fasta = f'{config["verified_contigs"]}/{{sample}}.{config["extension"]}'
     log:
-        f'{config["log_folder"]}/Clean_Fastas__-{{sample}}{config["taxon_id"]}.{config["log_id"]}.log'
+        f'{config["log_folder"]}/Clean_Fastas__{{sample}}{config["taxon_id"]}.{config["log_id"]}.log'
     shell:
         """
         anvi-script-reformat-fasta {input.fasta} -o {output.clean_fasta} --simplify-names --seq-type NT &> {log}
         """
 
 
-def grab_ncbi_fastas(wildcards):
-    checkpoint_output = checkpoints.Process_NCBI_Zip.get(**wildcards).output[0]
-    file_names = expand(
-        f'{config["verified_contigs"]}/{{sample}}.{config["extension"]}',
-        sample = glob_wildcards(os.path.join(checkpoint_output, "{sample}.fna")).sample)
-    return file_names
+rule Run_CheckM:
+    input:
+        fasta = f'{config["fastas"]}/{{sample}}.fna'
+    params:
+        threads=config['threads'],
+        out=f'{config["checkm"]}/{{sample}}/'
+    output:
+        out=f'{config["checkm"]}/{{sample}}/lineage.ms'
+    log:
+        "logs/qc/{sample}.log"
+    shell:
+        """
+        checkm lineage_wf -t {params.threads} -x fa {input.fasta} {params.out} &> {log}
+        """
 
 
-rule Finished:
+rule Verify_All:
     input:
         grab_ncbi_fastas
     output:
@@ -65,3 +92,17 @@ rule Finished:
         """
         touch {output}
         """
+
+rule Checkm_All:
+    input:
+        grab_checkm_fastas
+    output:
+        f'{config["checkm"]}/complete.tkn'
+    shell:
+        """
+        touch {output}
+        """
+
+
+
+

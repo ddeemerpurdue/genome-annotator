@@ -3,7 +3,6 @@ import shutil
 print(f'Current working directory: {os.getcwd()}')
 from datetime import datetime
 tstamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-configfile: "../config.yaml"
 
 include: "./Download.smk"
 
@@ -12,7 +11,11 @@ include: "./Download.smk"
 
 rule filter_all:
     input:
-        f'{config["verified_contigs"]}/complete.tkn'
+        a=f'{config["verified_contigs"]}/complete.tkn',
+        b=f'{config["checkm"]}/complete.tkn',
+        c=f'{config["fastani"]}/{config["taxon_id"]}-Filtered.txt',
+        d=f'{config["final_contigs"]}/complete.tkn'
+        # b="CheckM/{sample}/lineage.ms"
 
 
 rule Create_Qlist:
@@ -50,7 +53,7 @@ rule Filter_Ani:
         threshold = f'{config["fastani_thresh"]}'
     output:
         ani = f'{config["fastani"]}/{config["taxon_id"]}-Filtered.txt',
-        genome_list = f'{config["fastani"]}/{config["taxon_id"]}-Genomes.txt'
+        genome_list = f'{config["fastani"]}/{config["taxon_id"]}-Genomes.txt',
     log:
         f'{config["log_folder"]}/Filter_Ani__{config["taxon_id"]}.{config["log_id"]}.log'
     shell:
@@ -60,7 +63,7 @@ rule Filter_Ani:
         """
 
 
-rule Place_Final_Genomes:
+checkpoint Place_Genomes:
     input: f'{config["fastani"]}/{config["taxon_id"]}-Genomes.txt'
     params:
         gen_dir = directory(f'{config["verified_contigs"]}')
@@ -74,3 +77,32 @@ rule Place_Final_Genomes:
                 dest = os.path.join(output[0], genome)
                 shutil.copyfile(src, dest)
     
+
+def grab_genomes(wildcards):
+    checkpoint_output = checkpoints.Place_Genomes.get(**wildcards).output[0]
+    file_names = expand(
+        f'{config["final_contigs"]}/{{sample}}.tkn',
+        sample = glob_wildcards(os.path.join(checkpoint_output, "{sample}.fasta")).sample)
+    return file_names
+
+
+rule Verify_Filtered:
+    input:
+        f'{config["filtered_contigs"]}/{{sample}}.{config["extension"]}'
+    output:
+        f'{config["final_contigs"]}/{{sample}}.tkn'
+    log:
+        f'{config["log_folder"]}/Verify_Filtered__{{sample}}{config["taxon_id"]}.{config["log_id"]}.log'
+    shell:
+        """
+        touch {output}
+        """
+
+
+rule Filter_All:
+    input: grab_genomes
+    output: f'{config["final_contigs"]}/complete.tkn'
+    shell:
+        """
+        touch {output}
+        """

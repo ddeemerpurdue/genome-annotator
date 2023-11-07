@@ -8,3 +8,4 @@ dbs/*
 Logs/*
 .snakemake/*
 genotator/tests/*
+tests/*

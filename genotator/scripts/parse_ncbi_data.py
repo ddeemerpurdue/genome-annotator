@@ -13,9 +13,9 @@ import argparse
 
 
 def unzip_data(file, base_location):
-    if os.path.isdir(base_location):
-        print('Base location exists...skipping unzipping')
-        return 0
+    # if os.path.isdir(base_location):
+        # print('Base location exists...skipping unzipping')
+        # return 0
 
     with zipfile.ZipFile(file, 'r') as zip_ref:
         zip_ref.extractall(os.path.join(base_location, "ncbi_data"))
@@ -48,6 +48,8 @@ def crawl_ncbi(base_location):
 def main(args):
     input_file = pathlib.Path(args.Input)
     base_location = input_file.parents[0]
+    print(f'{input_file=}')
+    print(f'{base_location=}')
     unzip_data(args.Input, base_location)
     fastas = crawl_ncbi(base_location)
     if len(fastas) == 0:

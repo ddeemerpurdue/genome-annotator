@@ -12,6 +12,8 @@ extension: "fasta"
 # Output paths
 verified_contigs: "../tests/results/fasta_files_verified"
 filtered_contigs: "../tests/results/fasta_files_filtered"
+final_contigs: "../tests/results/final_contigs"
+checkm: "../tests/results/checkm"
 fastani: "../tests/results/fastani"
 fastani_thresh: 99
 contig_db: "../tests/results/contig_dbs"
