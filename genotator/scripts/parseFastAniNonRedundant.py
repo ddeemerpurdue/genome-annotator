@@ -47,11 +47,17 @@ def connected_components(matches):
     return result
 
 
-def write_groups(results, output):
+def write_groups(results, output, genome_list, direct):
     with open(output, 'w') as out:
         for result in results:
             values = results[result]
             out.write('\t'.join(values) + '\n')
+
+    with open(genome_list, 'w') as out:
+        for result in results:
+            genome = results[result][0]
+            out.write(f'{genome}\n')
+
     return 0
 
 
@@ -62,6 +68,10 @@ def parse_args():
     parser.add_argument('-o', '--Output',
                         help='Output file to write to.',
                         default='fastAniParse.txt', required=False)
+    parser.add_argument('-g', '--GenomeList',
+                        help="Genome list file")
+    parser.add_argument('-d', '--Directory',
+                        help="Where to put the filtered genomes")
     parser.add_argument('-t', '--Threshold',
                         help='ANI threshold to filter redundancy',
                         default=99, required=False, type=float)
@@ -73,4 +83,4 @@ if __name__ == '__main__':
     args = parser.parse_args()
     matches = parse_fastani(args.Input, args.Threshold)
     results = connected_components(matches)
-    write_groups(results, args.Output)
+    write_groups(results, args.Output, args.GenomeList, args.Directory)

@@ -1,9 +1,9 @@
 import os
 from datetime import datetime
 tstamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
-configfile: "../config.yaml"
+# configfile: "../config.yaml"
 
-include: "Filter.smk"
+# include: "Filter.smk"
 # module filter_workflow:
 #     snakefile: "Filter.smk"
 
@@ -19,7 +19,6 @@ print(f'Samples...')
 
 rule all:
     input:
-        f'{config["filtered_contigs"]}',
         expand(f'{config["gff_final"]}/{{sample}}.gff3', sample=samples)
 
 rule Create_Database:
