@@ -15,8 +15,6 @@ tstamp = datetime.now().strftime("%d-%m-%Y_%H-%M-%S")
 samples, = glob_wildcards(
     f'{config["filtered_contigs"]}/{{samples}}.{config["extension"]}')
 
-print(f'Samples...')
-
 rule all:
     input:
         expand(f'{config["gff_final"]}/{{sample}}.gff3', sample=samples)
